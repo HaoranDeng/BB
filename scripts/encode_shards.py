@@ -71,8 +71,20 @@ def load_text_encoder(name: str, dtype: torch.dtype, device: torch.device) -> to
     return model.to(device).eval()
 
 
+def expand_input_shards(input_shards: str) -> str | list[str]:
+    if input_shards.startswith("@"):
+        list_path = Path(input_shards[1:])
+        with list_path.open("r", encoding="utf-8") as f:
+            shards = [line.strip() for line in f if line.strip()]
+        if not shards:
+            raise ValueError(f"Shard list is empty: {list_path}")
+        return shards
+    return input_shards
+
+
 def flush_shard(
     output_dir: Path,
+    output_prefix: str,
     shard_index: int,
     latents_buffer: list[torch.Tensor],
     text_buffer: list[torch.Tensor],
@@ -81,7 +93,7 @@ def flush_shard(
         return
     latents = torch.cat(latents_buffer, dim=0)
     text_embeds = torch.cat(text_buffer, dim=0)
-    path = output_dir / f"encoded_{shard_index:06d}.pt"
+    path = output_dir / f"{output_prefix}{shard_index:06d}.pt"
     torch.save({"latents": latents, "text_embeds": text_embeds}, path)
     print(f"wrote {path} samples={latents.shape[0]}")
 
@@ -90,6 +102,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-shards", required=True)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--output-prefix", default="encoded_")
     parser.add_argument("--vae", default="stabilityai/sd-vae-ft-ema")
     parser.add_argument("--text-encoder", default="google/t5-v1_1-base")
     parser.add_argument("--image-size", type=int, default=512)
@@ -120,7 +133,11 @@ def main() -> None:
     )
 
     dataset = (
-        wds.WebDataset(args.input_shards, shardshuffle=True, handler=wds.warn_and_continue)
+        wds.WebDataset(
+            expand_input_shards(args.input_shards),
+            shardshuffle=True,
+            handler=wds.warn_and_continue,
+        )
         .decode("pil", handler=wds.warn_and_continue)
         .map(extract_sample, handler=wds.warn_and_continue)
     )
@@ -174,7 +191,13 @@ def main() -> None:
             total += latents.shape[0]
 
             if buffered >= args.samples_per_shard:
-                flush_shard(output_dir, shard_index, latents_buffer, text_buffer)
+                flush_shard(
+                    output_dir,
+                    args.output_prefix,
+                    shard_index,
+                    latents_buffer,
+                    text_buffer,
+                )
                 shard_index += 1
                 latents_buffer.clear()
                 text_buffer.clear()
@@ -183,7 +206,7 @@ def main() -> None:
             if args.max_samples is not None and total >= args.max_samples:
                 break
 
-    flush_shard(output_dir, shard_index, latents_buffer, text_buffer)
+    flush_shard(output_dir, args.output_prefix, shard_index, latents_buffer, text_buffer)
     print(f"encoded_samples={total} output_dir={output_dir}")
 
 
