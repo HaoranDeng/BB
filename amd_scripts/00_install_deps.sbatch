@@ -16,4 +16,5 @@ activate_bb_python
 print_bb_env
 
 "$BB_PYTHON" -m pip install --user --upgrade \
-  img2dataset
+  img2dataset \
+  standard-imghdr
