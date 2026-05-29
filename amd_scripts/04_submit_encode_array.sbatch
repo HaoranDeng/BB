@@ -44,7 +44,7 @@ echo "shards_per_task=$BB_ENCODE_SHARDS_PER_TASK"
 
 job_id="$(sbatch --parsable \
   --partition="$BB_GPU_PARTITION" \
-  --array="0-${array_max}" \
+  --array="0-${array_max}%${BB_ENCODE_ARRAY_CONCURRENCY}" \
   --export=ALL \
   amd_scripts/03_encode_shards_array.sbatch)"
 echo "submitted_encode_array_job_id=$job_id"

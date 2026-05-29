@@ -44,7 +44,7 @@ echo "files_per_task=$BB_PREPARE_FILES_PER_TASK"
 
 prepare_array_job="$(sbatch --parsable \
   --partition="$BB_CPU_PARTITION" \
-  --array="0-${array_max}" \
+  --array="0-${array_max}%${BB_PREPARE_ARRAY_CONCURRENCY}" \
   --export=ALL \
   amd_scripts/02_prepare_datacomp_array.sbatch)"
 

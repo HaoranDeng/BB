@@ -19,6 +19,7 @@ Override any setting by exporting it before submission, for example:
 ```bash
 export BB_DATACOMP_MAX_FILES=128
 export BB_ENCODE_SHARDS_PER_TASK=4
+export BB_PREPARE_ARRAY_CONCURRENCY=8
 bash amd_scripts/submit_data_pipeline.sh
 ```
 
