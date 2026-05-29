@@ -13,7 +13,23 @@ cd "${BB_REPO_DIR:-$HOME/workspace/BB}"
 source amd_scripts/common.sh
 prepare_bb_dirs
 
-mapfile -t shards < <(find "$BB_WDS_DIR" -type f -name '*.tar' | sort)
+mapfile -t shards < <("$BB_PYTHON" - <<'PY'
+from pathlib import Path
+
+import pyarrow.parquet as pq
+
+root = Path(__import__("os").environ["BB_WDS_DIR"])
+for tar_path in sorted(root.rglob("*.tar")):
+    parquet_path = tar_path.with_suffix(".parquet")
+    if not parquet_path.exists():
+        continue
+    try:
+        pq.ParquetFile(parquet_path)
+    except Exception:
+        continue
+    print(tar_path)
+PY
+)
 count="${#shards[@]}"
 if [[ "$count" -eq 0 ]]; then
   echo "No WebDataset tar shards found in $BB_WDS_DIR" >&2
