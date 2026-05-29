@@ -19,6 +19,7 @@ print_bb_env
 import importlib
 mods = [
     "torch",
+    "torchvision",
     "yaml",
     "huggingface_hub",
     "img2dataset",
@@ -26,8 +27,20 @@ mods = [
     "diffusers",
     "transformers",
     "pyarrow",
+    "PIL",
+    "tqdm",
+    "safetensors",
+    "accelerate",
+    "numpy",
 ]
+missing = []
 for name in mods:
-    module = importlib.import_module(name)
-    print(f"{name}: {getattr(module, '__version__', 'ok')}")
+    try:
+        module = importlib.import_module(name)
+        print(f"{name}: {getattr(module, '__version__', 'ok')}")
+    except Exception as exc:
+        missing.append(name)
+        print(f"MISSING {name}: {type(exc).__name__}: {exc}")
+if missing:
+    raise SystemExit(f"Missing Python modules: {', '.join(missing)}")
 PY

@@ -30,6 +30,10 @@ cd ~/workspace/BB
 # Optional sanity check for the Python environment.
 sbatch --partition=devel amd_scripts/00_check_env.sbatch
 
+# If the check reports a missing data-prep package, install the lightweight
+# non-Torch dependency bundle through Slurm as well.
+sbatch --partition=devel amd_scripts/00_install_deps.sbatch
+
 # Submit the full data preparation chain:
 # metadata -> WebDataset image download -> GPU encode array submitter.
 bash amd_scripts/submit_data_pipeline.sh
