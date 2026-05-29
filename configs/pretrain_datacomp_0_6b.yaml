@@ -1,0 +1,46 @@
+run:
+  seed: 1337
+  output_dir: checkpoints/datacomp_0_6b
+  max_steps: 40000
+  log_every: 10
+  save_every: 1000
+  precision: bf16
+  compile: false
+
+data:
+  kind: encoded_shards
+  encoded_dir: data/datacomp_1b/encoded_512
+  batch_size: 16
+  num_workers: 8
+  shuffle_buffer: 8192
+  latent_channels: 4
+  latent_size: 32
+  text_dim: 768
+  max_text_tokens: 64
+
+model:
+  latent_size: 32
+  patch_size: 2
+  in_channels: 4
+  out_channels: 4
+  hidden_size: 1024
+  depth: 24
+  num_heads: 16
+  mlp_ratio: 4.0
+  context_dim: 768
+  gradient_checkpointing: true
+
+diffusion:
+  prediction_type: epsilon
+  min_t: 0.001
+  max_t: 0.999
+
+optim:
+  lr: 0.0001
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  warmup_steps: 1000
+  grad_accum_steps: 1
+  grad_clip: 1.0
+  ema_decay: 0.9999
