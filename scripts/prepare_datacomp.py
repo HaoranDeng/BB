@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pyarrow.parquet as pq
@@ -54,10 +54,15 @@ def main() -> None:
     url_col = args.url_col or inferred_url_col
     caption_col = args.caption_col or inferred_caption_col
 
+    img2dataset_bin = shutil.which("img2dataset")
+    if img2dataset_bin is None:
+        raise RuntimeError(
+            "img2dataset executable not found on PATH. Install it with "
+            "`python -m pip install img2dataset`."
+        )
+
     cmd = [
-        sys.executable,
-        "-m",
-        "img2dataset",
+        img2dataset_bin,
         "--url_list",
         str(metadata_dir),
         "--input_format",
