@@ -17,7 +17,7 @@ image fetching, or feature encoding directly on the login node.
 Override any setting by exporting it before submission, for example:
 
 ```bash
-export BB_DATACOMP_MAX_FILES=128
+export BB_DATACOMP_MAX_FILES=56
 export BB_ENCODE_SHARDS_PER_TASK=4
 export BB_PREPARE_ARRAY_CONCURRENCY=1
 bash amd_scripts/submit_data_pipeline.sh
@@ -51,6 +51,9 @@ sbatch amd_scripts/05_train_8mi300.sbatch
 
 This cluster/account currently rejects jobs longer than 4 hours, so long-running
 data work is split into arrays and each batch script stays below that limit.
+
+The default metadata slice is 56 DataComp parquet files, which is about 30B
+visual tokens with the current 512px latent/patch configuration.
 
 ## Python Environment
 
