@@ -32,6 +32,8 @@ mods = [
     "safetensors",
     "accelerate",
     "numpy",
+    "sentencepiece",
+    "tiktoken",
 ]
 missing = []
 for name in mods:

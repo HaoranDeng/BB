@@ -17,4 +17,6 @@ print_bb_env
 
 "$BB_PYTHON" -m pip install --user --upgrade \
   img2dataset \
+  sentencepiece \
+  tiktoken \
   standard-imghdr

@@ -19,10 +19,12 @@ dependencies = [
   "pyyaml>=6",
   "requests>=2.32",
   "safetensors>=0.4",
+  "sentencepiece>=0.2",
   "torch>=2.3",
   "torchvision>=0.18",
   "tqdm>=4.66",
   "transformers>=4.43",
+  "tiktoken>=0.7",
   "webdataset>=0.2",
 ]
 
