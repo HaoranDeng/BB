@@ -10,26 +10,19 @@ meta_job="$(sbatch --parsable \
   --export=ALL \
   amd_scripts/01_download_metadata.sbatch)"
 
-prepare_job="$(sbatch --parsable \
+prepare_submit_job="$(sbatch --parsable \
   --partition="$BB_CPU_PARTITION" \
   --dependency="afterok:$meta_job" \
   --export=ALL \
-  amd_scripts/02_prepare_datacomp.sbatch)"
-
-encode_submit_job="$(sbatch --parsable \
-  --partition="$BB_DEVEL_PARTITION" \
-  --dependency="afterok:$prepare_job" \
-  --export=ALL \
-  amd_scripts/04_submit_encode_array.sbatch)"
+  amd_scripts/02_submit_prepare_array.sbatch)"
 
 cat <<EOF
 Submitted DataComp pipeline:
-  metadata job:       $meta_job
-  webdataset job:     $prepare_job
-  encode submit job:  $encode_submit_job
+  metadata job:         $meta_job
+  prepare submit job:   $prepare_submit_job
 
-The encode submit job will create shard-list manifests and submit the actual GPU
-array after the WebDataset job succeeds. Watch with:
+The prepare submit job will create a WebDataset download array on mi210 and then
+queue the encode-array submitter after the download array succeeds. Watch with:
   squeue -u "$USER"
   tail -f "$BB_LOG_DIR"/bb-dc-meta-${meta_job}.out
 EOF

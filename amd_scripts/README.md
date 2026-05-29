@@ -11,7 +11,7 @@ image fetching, or feature encoding directly on the login node.
 - Metadata: `$BB_DATA_ROOT/datacomp_1b/metadata`
 - WebDataset shards: `$BB_DATA_ROOT/datacomp_1b/wds_512`
 - Encoded latents/text: `$BB_DATA_ROOT/datacomp_1b/encoded_512`
-- CPU partition: `mi3001x`
+- CPU-only partition: `mi2101x`
 - GPU partition: `mi3008x`
 
 Override any setting by exporting it before submission, for example:
@@ -28,14 +28,14 @@ bash amd_scripts/submit_data_pipeline.sh
 cd ~/workspace/BB
 
 # Optional sanity check for the Python environment.
-sbatch --partition=devel amd_scripts/00_check_env.sbatch
+sbatch --partition=mi2101x amd_scripts/00_check_env.sbatch
 
 # If the check reports a missing data-prep package, install the lightweight
 # non-Torch dependency bundle through Slurm as well.
-sbatch --partition=devel amd_scripts/00_install_deps.sbatch
+sbatch --partition=mi2101x amd_scripts/00_install_deps.sbatch
 
 # Submit the full data preparation chain:
-# metadata -> WebDataset image download -> GPU encode array submitter.
+# metadata -> mi210 WebDataset image-download array -> GPU encode array submitter.
 bash amd_scripts/submit_data_pipeline.sh
 
 # Watch progress.
@@ -47,6 +47,9 @@ Once `encoded_512` contains `.pt` shards, start the 8x MI300 run:
 ```bash
 sbatch amd_scripts/05_train_8mi300.sbatch
 ```
+
+This cluster/account currently rejects jobs longer than 4 hours, so long-running
+data work is split into arrays and each batch script stays below that limit.
 
 ## Python Environment
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=bb-submit-encode
-#SBATCH --partition=devel
+#SBATCH --partition=mi2101x
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
