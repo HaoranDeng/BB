@@ -23,9 +23,9 @@ export NCCL_DEBUG="${NCCL_DEBUG:-WARN}"
 
 WORK_DIR="${WORK:-/work1/jasoncong/denghaoran}"
 IMAGENET_ROOT="${IMAGENET_ROOT:-${WORK_DIR}/bb/data/imagenet}"
-OUTPUT_DIR="${OUTPUT_DIR:-${WORK_DIR}/bb/checkpoints/imagenet_vit_b16_mi2104x}"
+OUTPUT_DIR="${OUTPUT_DIR:-${WORK_DIR}/bb/checkpoints/imagenet_vit_b16_paper_scratch}"
 WANDB_PROJECT="${WANDB_PROJECT:-bb-imagenet-vit}"
-WANDB_NAME="${WANDB_NAME:-imagenet-vit-b16-paper-scratch-mi2104x}"
+WANDB_NAME="${WANDB_NAME:-imagenet-vit-b16-paper-scratch-jax-mi2104x}"
 
 python -m torch.distributed.run --standalone --nproc_per_node=4 tools/train_vit.py \
   --config configs/imagenet_vit_b16_paper_scratch.yaml \

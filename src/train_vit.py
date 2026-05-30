@@ -58,23 +58,46 @@ def build_optimizer(config: dict[str, Any], model: nn.Module) -> torch.optim.Opt
     )
     weight_decay = float(optim_cfg.get("weight_decay", 0.05))
     lr = float(optim_cfg["lr"])
+    decay_filter = str(optim_cfg.get("weight_decay_filter", "all")).lower()
+    params: Any
+    if decay_filter == "all":
+        params = model.parameters()
+    elif decay_filter in {"kernel", "matrix", "no_bias_norm"}:
+        decay_params = []
+        no_decay_params = []
+        for param_name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
+            is_embedding_param = param_name.endswith(("cls_token", "pos_embed"))
+            if param.ndim > 1 and not is_embedding_param:
+                decay_params.append(param)
+            else:
+                no_decay_params.append(param)
+        params = [
+            {"params": decay_params, "weight_decay": weight_decay},
+            {"params": no_decay_params, "weight_decay": 0.0},
+        ]
+        weight_decay = 0.0
+    else:
+        raise ValueError("weight_decay_filter must be 'all' or 'kernel'.")
+
     if name == "adam":
         return torch.optim.Adam(
-            model.parameters(),
+            params,
             lr=lr,
             betas=betas,
             weight_decay=weight_decay,
         )
     if name == "adamw":
         return torch.optim.AdamW(
-            model.parameters(),
+            params,
             lr=lr,
             betas=betas,
             weight_decay=weight_decay,
         )
     if name == "sgd":
         return torch.optim.SGD(
-            model.parameters(),
+            params,
             lr=lr,
             momentum=float(optim_cfg.get("momentum", 0.9)),
             weight_decay=weight_decay,

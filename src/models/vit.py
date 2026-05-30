@@ -72,8 +72,12 @@ class VisionTransformer(nn.Module):
         dropout: float = 0.0,
         attn_dropout: float = 0.0,
         attention: str = "standard",
+        init_scheme: str = "trunc_normal",
+        head_init: str = "trunc_normal",
     ) -> None:
         super().__init__()
+        self.init_scheme = init_scheme
+        self.head_init = head_init
         self.patch_embed = PatchEmbed(img_size, patch_size, in_channels, embed_dim)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, self.patch_embed.num_patches + 1, embed_dim))
@@ -89,13 +93,38 @@ class VisionTransformer(nn.Module):
         self.initialize_weights()
 
     def initialize_weights(self) -> None:
-        nn.init.trunc_normal_(self.cls_token, std=0.02)
-        nn.init.trunc_normal_(self.pos_embed, std=0.02)
+        init_scheme = self.init_scheme.lower()
+        head_init = self.head_init.lower()
+
+        if init_scheme == "jax":
+            nn.init.zeros_(self.cls_token)
+            nn.init.normal_(self.pos_embed, std=0.02)
+            nn.init.xavier_uniform_(self.patch_embed.proj.weight)
+            if self.patch_embed.proj.bias is not None:
+                nn.init.zeros_(self.patch_embed.proj.bias)
+        elif init_scheme == "trunc_normal":
+            nn.init.trunc_normal_(self.cls_token, std=0.02)
+            nn.init.trunc_normal_(self.pos_embed, std=0.02)
+        else:
+            raise ValueError("init_scheme must be 'trunc_normal' or 'jax'.")
+
         for module in self.modules():
             if isinstance(module, nn.Linear):
-                nn.init.trunc_normal_(module.weight, std=0.02)
+                if module is self.head and head_init in {"zero", "zeros"}:
+                    nn.init.zeros_(module.weight)
+                    if module.bias is not None:
+                        nn.init.zeros_(module.bias)
+                    continue
+
+                if init_scheme == "jax":
+                    nn.init.xavier_uniform_(module.weight)
+                else:
+                    nn.init.trunc_normal_(module.weight, std=0.02)
                 if module.bias is not None:
-                    nn.init.zeros_(module.bias)
+                    if init_scheme == "jax":
+                        nn.init.normal_(module.bias, std=1e-6)
+                    else:
+                        nn.init.zeros_(module.bias)
             elif isinstance(module, nn.LayerNorm):
                 nn.init.ones_(module.weight)
                 nn.init.zeros_(module.bias)

@@ -138,19 +138,23 @@ The paper-style ImageNet scratch config uses ViT-B/16 at 224px, Adam, beta1
 0.9, beta2 0.999, cosine decay, 10k warmup steps, weight decay 0.3, dropout 0.1,
 and global norm clipping at 1. With 4 GPUs, the default per-device batch size 64
 and `grad_accum_steps: 16` gives an effective global batch size of 4096.
+The ImageNet input normalization is `value_range(-1, 1)`, and the model uses
+JAX-style ViT initialization: zero class token, learned position embeddings with
+normal std 0.02, Xavier dense kernels, and a zero-initialized classification head.
 
 ```bash
 torchrun --standalone --nproc_per_node=4 tools/train_vit.py \
   --config configs/imagenet_vit_b16_paper_scratch.yaml \
   --override data.root="${WORK}/bb/data/imagenet" \
-  --override run.output_dir="${WORK}/bb/checkpoints/imagenet_vit_b16"
+  --override run.output_dir="${WORK}/bb/checkpoints/imagenet_vit_b16_paper_scratch"
 ```
 
 The headline report should come from the best validation record in
-`$WORK/bb/checkpoints/imagenet_vit_b16/metrics.jsonl`, using `acc1` and `acc5`.
+`$WORK/bb/checkpoints/imagenet_vit_b16_paper_scratch/metrics.jsonl`, using
+`acc1` and `acc5`.
 
 ```bash
-python tools/report_vit_metrics.py "$WORK/bb/checkpoints/imagenet_vit_b16/metrics.jsonl"
+python tools/report_vit_metrics.py "$WORK/bb/checkpoints/imagenet_vit_b16_paper_scratch/metrics.jsonl"
 ```
 
 ## Train DiT Image Generation

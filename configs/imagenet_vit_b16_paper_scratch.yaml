@@ -17,6 +17,7 @@ data:
   download: false
   synthetic: false
   augment: true
+  normalization: value_range
   image_size: 224
   resize_size: 256
   batch_size: 64
@@ -34,6 +35,8 @@ model:
   dropout: 0.1
   attn_dropout: 0.0
   attention: standard
+  init_scheme: jax
+  head_init: zero
 
 optim:
   name: adam
@@ -43,6 +46,7 @@ optim:
   weight_decay: 0.3
   beta1: 0.9
   beta2: 0.999
+  weight_decay_filter: kernel
   warmup_steps: 10000
   grad_accum_steps: 16
   grad_clip: 1.0

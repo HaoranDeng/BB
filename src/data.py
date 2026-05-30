@@ -16,6 +16,12 @@ IMAGENET_STATS = {
     "std": (0.229, 0.224, 0.225),
 }
 
+IMAGENET_NORMALIZATIONS = {
+    "imagenet": (IMAGENET_STATS["mean"], IMAGENET_STATS["std"]),
+    "value_range": ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    "minus_one_to_one": ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+}
+
 CIFAR_STATS = {
     "cifar10": {
         "classes": 10,
@@ -78,6 +84,7 @@ def build_transform(
     augment: bool,
     image_size: int,
     resize_size: int | None = None,
+    normalization: str = "imagenet",
 ) -> transforms.Compose:
     if dataset_name == "imagenet":
         if task != "classification":
@@ -100,10 +107,17 @@ def build_transform(
                 transforms.Resize(resize_size or default_resize, interpolation=interpolation),
                 transforms.CenterCrop(image_size),
             ]
+        norm_key = normalization.lower()
+        if norm_key not in IMAGENET_NORMALIZATIONS:
+            raise ValueError(
+                f"Unsupported ImageNet normalization {normalization!r}; "
+                f"use one of {sorted(IMAGENET_NORMALIZATIONS)}."
+            )
+        mean, std = IMAGENET_NORMALIZATIONS[norm_key]
         ops.extend(
             [
                 transforms.ToTensor(),
-                transforms.Normalize(IMAGENET_STATS["mean"], IMAGENET_STATS["std"]),
+                transforms.Normalize(mean, std),
             ]
         )
         return transforms.Compose(ops)
@@ -162,6 +176,7 @@ def build_dataset(config: dict, task: Task, train: bool, seed: int) -> Dataset:
         augment=bool(data_cfg.get("augment", True)),
         image_size=image_size,
         resize_size=data_cfg.get("resize_size"),
+        normalization=str(data_cfg.get("normalization", "imagenet")),
     )
     root = str(data_cfg.get("root", "data"))
     download = bool(data_cfg.get("download", True))
