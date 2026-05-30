@@ -29,6 +29,9 @@ class EMA:
         self.decay = float(state["decay"])
         self.shadow = state["shadow"]  # type: ignore[assignment]
 
+    def to(self, device: torch.device) -> None:
+        self.shadow = {name: value.to(device) for name, value in self.shadow.items()}
+
     @torch.no_grad()
     def copy_to(self, model: nn.Module) -> None:
         for name, parameter in model.named_parameters():

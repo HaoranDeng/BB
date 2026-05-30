@@ -1,0 +1,38 @@
+run:
+  seed: 1337
+  output_dir: checkpoints/cifar100_vit
+  epochs: 300
+  max_steps: 1000000000
+  log_every: 100
+  eval_every_epochs: 1
+  precision: bf16
+  compile: false
+
+data:
+  dataset: cifar100
+  root: data
+  download: true
+  synthetic: false
+  augment: true
+  batch_size: 128
+  num_workers: 4
+
+model:
+  img_size: 32
+  patch_size: 4
+  in_channels: 3
+  embed_dim: 384
+  depth: 8
+  num_heads: 6
+  mlp_ratio: 4.0
+  dropout: 0.1
+  attn_dropout: 0.0
+
+optim:
+  lr: 0.0005
+  min_lr: 0.000001
+  weight_decay: 0.05
+  beta1: 0.9
+  beta2: 0.999
+  warmup_steps: 500
+  grad_clip: 1.0

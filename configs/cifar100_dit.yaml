@@ -1,0 +1,51 @@
+run:
+  seed: 1337
+  output_dir: checkpoints/cifar100_dit
+  max_steps: 500000
+  log_every: 100
+  save_every: 10000
+  sample_every: 5000
+  precision: bf16
+  compile: false
+
+data:
+  dataset: cifar100
+  root: data
+  download: true
+  synthetic: false
+  augment: true
+  batch_size: 128
+  num_workers: 4
+
+model:
+  img_size: 32
+  patch_size: 4
+  in_channels: 3
+  hidden_size: 384
+  depth: 12
+  num_heads: 6
+  mlp_ratio: 4.0
+  class_dropout_prob: 0.1
+  gradient_checkpointing: false
+
+diffusion:
+  timesteps: 1000
+  beta_schedule: cosine
+  prediction_type: epsilon
+
+optim:
+  lr: 0.0002
+  min_lr: 0.00001
+  weight_decay: 0.0
+  beta1: 0.9
+  beta2: 0.999
+  warmup_steps: 5000
+  grad_accum_steps: 1
+  grad_clip: 1.0
+  ema_decay: 0.9999
+
+sample:
+  num_samples: 64
+  ddim_steps: 50
+  cfg_scale: 1.5
+  nrow: 8

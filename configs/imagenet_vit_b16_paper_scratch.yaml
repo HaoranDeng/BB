@@ -1,0 +1,48 @@
+run:
+  seed: 1337
+  output_dir: checkpoints/imagenet_vit_b16_paper_scratch
+  epochs: 300
+  max_steps: 1000000000
+  log_every: 100
+  eval_every_epochs: 1
+  save_every: 1000
+  precision: bf16
+  compile: false
+
+data:
+  dataset: imagenet
+  root: /path/to/imagenet
+  train_dir: null
+  val_dir: null
+  download: false
+  synthetic: false
+  augment: true
+  image_size: 224
+  resize_size: 256
+  batch_size: 64
+  eval_batch_size: 128
+  num_workers: 8
+
+model:
+  img_size: 224
+  patch_size: 16
+  in_channels: 3
+  embed_dim: 768
+  depth: 12
+  num_heads: 12
+  mlp_ratio: 4.0
+  dropout: 0.1
+  attn_dropout: 0.0
+
+optim:
+  name: adam
+  lr: 0.003
+  min_lr: 0.0
+  schedule: cosine
+  weight_decay: 0.3
+  beta1: 0.9
+  beta2: 0.999
+  warmup_steps: 10000
+  grad_accum_steps: 16
+  grad_clip: 1.0
+  label_smoothing: 0.0

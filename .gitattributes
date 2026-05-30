@@ -1,5 +1,7 @@
+*.toml text eol=lf
+.* text eol=lf
 *.sh text eol=lf
-amd_scripts/* text eol=lf
+*.sbatch text eol=lf
 *.py text eol=lf
 *.yaml text eol=lf
 *.md text eol=lf

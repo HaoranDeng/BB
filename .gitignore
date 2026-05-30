@@ -10,6 +10,8 @@ venv/
 data/
 checkpoints/
 runs/
+samples/
+logs/
 wandb/
 *.pt
 *.pth
@@ -17,6 +19,7 @@ wandb/
 *.tar
 *.parquet
 *.jsonl
+*.log
 
 .DS_Store
 Thumbs.db

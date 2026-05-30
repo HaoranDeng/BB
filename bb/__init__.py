@@ -1,3 +1,3 @@
-"""BB ImageGen pretraining package."""
+"""BB CIFAR transformer training package."""
 
 __version__ = "0.1.0"

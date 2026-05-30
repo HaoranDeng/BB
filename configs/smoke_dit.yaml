@@ -1,0 +1,52 @@
+run:
+  seed: 7
+  output_dir: checkpoints/smoke_dit
+  max_steps: 2
+  log_every: 1
+  save_every: 2
+  sample_every: 0
+  precision: fp32
+  compile: false
+
+data:
+  dataset: cifar10
+  root: data
+  download: false
+  synthetic: true
+  synthetic_train_samples: 16
+  augment: false
+  batch_size: 4
+  num_workers: 0
+
+model:
+  img_size: 32
+  patch_size: 4
+  in_channels: 3
+  hidden_size: 64
+  depth: 2
+  num_heads: 4
+  mlp_ratio: 2.0
+  class_dropout_prob: 0.1
+  gradient_checkpointing: false
+
+diffusion:
+  timesteps: 16
+  beta_schedule: linear
+  prediction_type: epsilon
+
+optim:
+  lr: 0.001
+  min_lr: 0.0
+  weight_decay: 0.0
+  beta1: 0.9
+  beta2: 0.999
+  warmup_steps: 0
+  grad_accum_steps: 1
+  grad_clip: 1.0
+  ema_decay: 0.999
+
+sample:
+  num_samples: 4
+  ddim_steps: 4
+  cfg_scale: 1.0
+  nrow: 2

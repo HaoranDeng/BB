@@ -1,4 +1,5 @@
-from bb.models.dit import ImageGenDiT, count_parameters
+from bb.models.dit import ClassConditionalDiT
 from bb.models.ema import EMA
+from bb.models.vit import VisionTransformer
 
-__all__ = ["EMA", "ImageGenDiT", "count_parameters"]
+__all__ = ["ClassConditionalDiT", "EMA", "VisionTransformer"]

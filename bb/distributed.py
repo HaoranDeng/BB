@@ -29,7 +29,8 @@ def init_distributed() -> DistributedState:
         device = torch.device("cpu")
 
     if distributed and not dist.is_initialized():
-        dist.init_process_group(backend="nccl")
+        backend = "nccl" if device.type == "cuda" else "gloo"
+        dist.init_process_group(backend=backend)
 
     return DistributedState(
         rank=rank,
@@ -66,3 +67,14 @@ def reduce_mean(tensor: torch.Tensor) -> torch.Tensor:
         dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
         tensor = tensor / dist.get_world_size()
     return tensor
+
+
+def reduce_sum(tensor: torch.Tensor) -> torch.Tensor:
+    if dist.is_available() and dist.is_initialized():
+        dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+    return tensor
+
+
+def cleanup_distributed() -> None:
+    if dist.is_available() and dist.is_initialized():
+        dist.destroy_process_group()
