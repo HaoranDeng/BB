@@ -13,6 +13,10 @@ one DiT, DDPM training, DDIM sampling, EMA checkpoints, and CPU-friendly smoke t
 
 ```text
 BB/
+  attention/
+    standard.py      scaled dot-product self-attention
+    linear.py        kernelized linear attention
+    monarch.py       two-stage block/global Monarch-style attention
   bb/
     data.py          CIFAR-10/CIFAR-100 and synthetic smoke datasets
     diffusion.py     Gaussian diffusion and DDIM sampler
@@ -37,7 +41,6 @@ BB/
     train_dit.py
     sample_dit.py
     report_vit_metrics.py
-    slurm_imagenet_vit_mi2104x.sbatch
 ```
 
 ## Install
@@ -94,6 +97,22 @@ Checkpoints are written under `run.output_dir`, with `best.pt`, `last.pt`, and
 `config.resolved.json`. ViT training also writes `metrics.jsonl` with train loss,
 validation loss, top-1, top-5, and best top-1.
 
+## Attention Variants
+
+Attention implementations live in the top-level `attention/` package. Each file
+contains one implementation:
+
+- `attention/standard.py`: standard scaled dot-product attention.
+- `attention/linear.py`: ELU feature-map linear attention.
+- `attention/monarch.py`: two-stage Monarch-style block/global attention.
+
+Switch variants from YAML or command line:
+
+```bash
+python scripts/train_vit.py --config configs/cifar10_vit.yaml \
+  --override model.attention=linear
+```
+
 ## Train ViT on ImageNet
 
 The ImageNet loader expects the usual ImageFolder layout:
@@ -118,13 +137,6 @@ torchrun --standalone --nproc_per_node=4 scripts/train_vit.py \
   --config configs/imagenet_vit_b16_paper_scratch.yaml \
   --override data.root=/path/to/imagenet \
   --override run.output_dir=checkpoints/imagenet_vit_b16
-```
-
-On amdhpc `mi2104x`, submit the included Slurm script after editing the ImageNet
-path:
-
-```bash
-sbatch scripts/slurm_imagenet_vit_mi2104x.sbatch
 ```
 
 The headline report should come from the best validation record in

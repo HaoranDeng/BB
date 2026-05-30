@@ -4,6 +4,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from attention import build_attention
+
 
 class PatchEmbed(nn.Module):
     def __init__(self, img_size: int, patch_size: int, in_channels: int, embed_dim: int) -> None:
@@ -34,32 +36,6 @@ class MLP(nn.Module):
         return self.dropout(x)
 
 
-class Attention(nn.Module):
-    def __init__(self, dim: int, num_heads: int, attn_dropout: float, proj_dropout: float) -> None:
-        super().__init__()
-        if dim % num_heads != 0:
-            raise ValueError("embed_dim must be divisible by num_heads")
-        self.num_heads = num_heads
-        self.head_dim = dim // num_heads
-        self.qkv = nn.Linear(dim, dim * 3)
-        self.attn_dropout = nn.Dropout(attn_dropout)
-        self.proj = nn.Linear(dim, dim)
-        self.proj_dropout = nn.Dropout(proj_dropout)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        batch, tokens, channels = x.shape
-        qkv = self.qkv(x).reshape(batch, tokens, 3, self.num_heads, self.head_dim)
-        q, k, v = qkv.permute(2, 0, 3, 1, 4)
-        out = F.scaled_dot_product_attention(
-            q,
-            k,
-            v,
-            dropout_p=self.attn_dropout.p if self.training else 0.0,
-        )
-        out = out.transpose(1, 2).reshape(batch, tokens, channels)
-        return self.proj_dropout(self.proj(out))
-
-
 class EncoderBlock(nn.Module):
     def __init__(
         self,
@@ -68,10 +44,11 @@ class EncoderBlock(nn.Module):
         mlp_ratio: float,
         dropout: float,
         attn_dropout: float,
+        attention: str,
     ) -> None:
         super().__init__()
         self.norm1 = nn.LayerNorm(embed_dim)
-        self.attn = Attention(embed_dim, num_heads, attn_dropout, dropout)
+        self.attn = build_attention(attention, embed_dim, num_heads, attn_dropout, dropout)
         self.norm2 = nn.LayerNorm(embed_dim)
         self.mlp = MLP(embed_dim, mlp_ratio, dropout)
 
@@ -94,6 +71,7 @@ class VisionTransformer(nn.Module):
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attn_dropout: float = 0.0,
+        attention: str = "standard",
     ) -> None:
         super().__init__()
         self.patch_embed = PatchEmbed(img_size, patch_size, in_channels, embed_dim)
@@ -102,7 +80,7 @@ class VisionTransformer(nn.Module):
         self.pos_dropout = nn.Dropout(dropout)
         self.blocks = nn.Sequential(
             *[
-                EncoderBlock(embed_dim, num_heads, mlp_ratio, dropout, attn_dropout)
+                EncoderBlock(embed_dim, num_heads, mlp_ratio, dropout, attn_dropout, attention)
                 for _ in range(depth)
             ]
         )

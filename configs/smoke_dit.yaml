@@ -28,6 +28,7 @@ model:
   mlp_ratio: 2.0
   class_dropout_prob: 0.1
   gradient_checkpointing: false
+  attention: standard
 
 diffusion:
   timesteps: 16

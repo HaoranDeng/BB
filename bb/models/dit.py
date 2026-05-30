@@ -4,8 +4,9 @@ import math
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
+
+from attention import build_attention
 
 
 def timestep_embedding(timesteps: torch.Tensor, dim: int, max_period: int = 10000) -> torch.Tensor:
@@ -74,30 +75,17 @@ class MLP(nn.Module):
         return self.net(x)
 
 
-class Attention(nn.Module):
-    def __init__(self, hidden_size: int, num_heads: int) -> None:
-        super().__init__()
-        if hidden_size % num_heads != 0:
-            raise ValueError("hidden_size must be divisible by num_heads")
-        self.num_heads = num_heads
-        self.head_dim = hidden_size // num_heads
-        self.qkv = nn.Linear(hidden_size, hidden_size * 3)
-        self.proj = nn.Linear(hidden_size, hidden_size)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        batch, tokens, channels = x.shape
-        qkv = self.qkv(x).reshape(batch, tokens, 3, self.num_heads, self.head_dim)
-        q, k, v = qkv.permute(2, 0, 3, 1, 4)
-        out = F.scaled_dot_product_attention(q, k, v)
-        out = out.transpose(1, 2).reshape(batch, tokens, channels)
-        return self.proj(out)
-
-
 class DiTBlock(nn.Module):
-    def __init__(self, hidden_size: int, num_heads: int, mlp_ratio: float) -> None:
+    def __init__(
+        self,
+        hidden_size: int,
+        num_heads: int,
+        mlp_ratio: float,
+        attention: str,
+    ) -> None:
         super().__init__()
         self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        self.attn = Attention(hidden_size, num_heads)
+        self.attn = build_attention(attention, hidden_size, num_heads)
         self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.mlp = MLP(hidden_size, mlp_ratio)
         self.ada_ln = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, hidden_size * 6))
@@ -136,6 +124,7 @@ class ClassConditionalDiT(nn.Module):
         mlp_ratio: float = 4.0,
         class_dropout_prob: float = 0.1,
         gradient_checkpointing: bool = False,
+        attention: str = "standard",
     ) -> None:
         super().__init__()
         if img_size % patch_size != 0:
@@ -158,7 +147,7 @@ class ClassConditionalDiT(nn.Module):
         self.time_embed = TimestepEmbedder(hidden_size)
         self.label_embed = LabelEmbedder(num_classes, hidden_size, class_dropout_prob)
         self.blocks = nn.ModuleList(
-            [DiTBlock(hidden_size, num_heads, mlp_ratio) for _ in range(depth)]
+            [DiTBlock(hidden_size, num_heads, mlp_ratio, attention) for _ in range(depth)]
         )
         self.final_layer = FinalLayer(hidden_size, patch_size, in_channels)
         self.initialize_weights()

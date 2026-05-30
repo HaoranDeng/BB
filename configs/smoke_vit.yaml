@@ -29,6 +29,7 @@ model:
   mlp_ratio: 2.0
   dropout: 0.0
   attn_dropout: 0.0
+  attention: standard
 
 optim:
   lr: 0.001
