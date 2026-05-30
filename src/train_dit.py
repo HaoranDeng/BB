@@ -9,10 +9,10 @@ import torch
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 
-from bb.config import apply_dotlist_overrides, load_config
-from bb.data import build_dataloader
-from bb.diffusion import GaussianDiffusion
-from bb.distributed import (
+from src.config import apply_dotlist_overrides, load_config
+from src.data import build_dataloader
+from src.diffusion import GaussianDiffusion
+from src.distributed import (
     DistributedState,
     barrier,
     cleanup_distributed,
@@ -20,8 +20,8 @@ from bb.distributed import (
     is_main_process,
     reduce_mean,
 )
-from bb.models import EMA, ClassConditionalDiT
-from bb.utils import (
+from src.models import EMA, ClassConditionalDiT
+from src.utils import (
     autocast_dtype,
     cosine_lr,
     count_parameters,

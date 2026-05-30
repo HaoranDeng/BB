@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["attention*", "bb*"]
+include = ["attention*", "src*"]
 
 [tool.ruff]
 line-length = 100

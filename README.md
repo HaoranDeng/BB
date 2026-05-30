@@ -17,7 +17,7 @@ BB/
     standard.py      scaled dot-product self-attention
     linear.py        kernelized linear attention
     monarch.py       two-stage block/global Monarch-style attention
-  bb/
+  src/
     data.py          CIFAR-10/CIFAR-100 and synthetic smoke datasets
     diffusion.py     Gaussian diffusion and DDIM sampler
     train_vit.py     ViT classification training loop
@@ -27,6 +27,15 @@ BB/
       vit.py
       dit.py
       ema.py
+  tools/
+    train_vit.py
+    train_dit.py
+    sample_dit.py
+    report_vit_metrics.py
+  scripts/
+    train_cifar_vit.sh
+    train_cifar_dit.sh
+    train_imagenet_vit_mi2104x.sh
   configs/
     cifar10_vit.yaml
     cifar100_vit.yaml
@@ -36,11 +45,6 @@ BB/
     smoke_vit.yaml
     smoke_imagenet_vit.yaml
     smoke_dit.yaml
-  scripts/
-    train_vit.py
-    train_dit.py
-    sample_dit.py
-    report_vit_metrics.py
 ```
 
 ## Install
@@ -66,22 +70,22 @@ python -m pip install -e ".[dev]"
 These use synthetic 32x32 tensors, so they do not download CIFAR.
 
 ```bash
-python scripts/train_vit.py --config configs/smoke_vit.yaml
-python scripts/train_vit.py --config configs/smoke_imagenet_vit.yaml
-python scripts/train_dit.py --config configs/smoke_dit.yaml
+python tools/train_vit.py --config configs/smoke_vit.yaml
+python tools/train_vit.py --config configs/smoke_imagenet_vit.yaml
+python tools/train_dit.py --config configs/smoke_dit.yaml
 ```
 
 ## Train ViT Classification
 
 ```bash
-python scripts/train_vit.py --config configs/cifar10_vit.yaml
-python scripts/train_vit.py --config configs/cifar100_vit.yaml
+python tools/train_vit.py --config configs/cifar10_vit.yaml
+python tools/train_vit.py --config configs/cifar100_vit.yaml
 ```
 
 Useful overrides:
 
 ```bash
-python scripts/train_vit.py --config configs/cifar10_vit.yaml \
+python tools/train_vit.py --config configs/cifar10_vit.yaml \
   --override data.batch_size=256 \
   --override model.depth=8 \
   --override optim.lr=0.0008
@@ -90,7 +94,7 @@ python scripts/train_vit.py --config configs/cifar10_vit.yaml \
 For multi-GPU:
 
 ```bash
-torchrun --standalone --nproc_per_node=4 scripts/train_vit.py --config configs/cifar10_vit.yaml
+torchrun --standalone --nproc_per_node=4 tools/train_vit.py --config configs/cifar10_vit.yaml
 ```
 
 Checkpoints are written under `run.output_dir`, with `best.pt`, `last.pt`, and
@@ -109,7 +113,7 @@ contains one implementation:
 Switch variants from YAML or command line:
 
 ```bash
-python scripts/train_vit.py --config configs/cifar10_vit.yaml \
+python tools/train_vit.py --config configs/cifar10_vit.yaml \
   --override model.attention=linear
 ```
 
@@ -133,7 +137,7 @@ and global norm clipping at 1. With 4 GPUs, the default per-device batch size 64
 and `grad_accum_steps: 16` gives an effective global batch size of 4096.
 
 ```bash
-torchrun --standalone --nproc_per_node=4 scripts/train_vit.py \
+torchrun --standalone --nproc_per_node=4 tools/train_vit.py \
   --config configs/imagenet_vit_b16_paper_scratch.yaml \
   --override data.root=/path/to/imagenet \
   --override run.output_dir=checkpoints/imagenet_vit_b16
@@ -143,20 +147,20 @@ The headline report should come from the best validation record in
 `checkpoints/imagenet_vit_b16/metrics.jsonl`, using `acc1` and `acc5`.
 
 ```bash
-python scripts/report_vit_metrics.py checkpoints/imagenet_vit_b16/metrics.jsonl
+python tools/report_vit_metrics.py checkpoints/imagenet_vit_b16/metrics.jsonl
 ```
 
 ## Train DiT Image Generation
 
 ```bash
-python scripts/train_dit.py --config configs/cifar10_dit.yaml
-python scripts/train_dit.py --config configs/cifar100_dit.yaml
+python tools/train_dit.py --config configs/cifar10_dit.yaml
+python tools/train_dit.py --config configs/cifar100_dit.yaml
 ```
 
 For multi-GPU:
 
 ```bash
-torchrun --standalone --nproc_per_node=4 scripts/train_dit.py --config configs/cifar10_dit.yaml
+torchrun --standalone --nproc_per_node=4 tools/train_dit.py --config configs/cifar10_dit.yaml
 ```
 
 The DiT trains directly in pixel space on CIFAR images normalized to `[-1, 1]`.
@@ -166,7 +170,7 @@ model weights, EMA weights, optimizer state, scaler state, and diffusion buffers
 ## Sample DiT Checkpoints
 
 ```bash
-python scripts/sample_dit.py \
+python tools/sample_dit.py \
   --config configs/cifar10_dit.yaml \
   --checkpoint checkpoints/cifar10_dit/last.pt \
   --output samples/cifar10_dit.png \
@@ -178,7 +182,7 @@ python scripts/sample_dit.py \
 To sample specific classes:
 
 ```bash
-python scripts/sample_dit.py \
+python tools/sample_dit.py \
   --config configs/cifar10_dit.yaml \
   --checkpoint checkpoints/cifar10_dit/last.pt \
   --labels 0,1,2,3,4,5,6,7,8,9

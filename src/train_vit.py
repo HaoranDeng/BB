@@ -9,9 +9,9 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.parallel import DistributedDataParallel
 
-from bb.config import apply_dotlist_overrides, load_config
-from bb.data import build_dataloader
-from bb.distributed import (
+from src.config import apply_dotlist_overrides, load_config
+from src.data import build_dataloader
+from src.distributed import (
     DistributedState,
     barrier,
     cleanup_distributed,
@@ -20,8 +20,8 @@ from bb.distributed import (
     reduce_mean,
     reduce_sum,
 )
-from bb.models import VisionTransformer
-from bb.utils import (
+from src.models import VisionTransformer
+from src.utils import (
     accuracy,
     append_jsonl,
     autocast_dtype,

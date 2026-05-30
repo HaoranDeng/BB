@@ -5,11 +5,11 @@ from pathlib import Path
 
 import torch
 
-from bb.config import apply_dotlist_overrides, load_config
-from bb.data import dataset_num_classes
-from bb.diffusion import GaussianDiffusion
-from bb.models import EMA, ClassConditionalDiT
-from bb.utils import save_image_grid, set_seed
+from src.config import apply_dotlist_overrides, load_config
+from src.data import dataset_num_classes
+from src.diffusion import GaussianDiffusion
+from src.models import EMA, ClassConditionalDiT
+from src.utils import save_image_grid, set_seed
 
 
 def parse_labels(
