@@ -173,6 +173,38 @@ def save_checkpoint(
     )
 
 
+def load_checkpoint_if_available(
+    config: dict[str, Any],
+    output_dir: Path,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scaler: torch.cuda.amp.GradScaler,
+    state: DistributedState,
+) -> tuple[int, int, float]:
+    if not bool(config["run"].get("resume", False)):
+        return 0, 0, 0.0
+
+    resume_from = config["run"].get("resume_from")
+    checkpoint_path = Path(resume_from) if resume_from else output_dir / "last.pt"
+    if not checkpoint_path.exists():
+        return 0, 0, 0.0
+
+    checkpoint = torch.load(checkpoint_path, map_location=state.device, weights_only=False)
+    raw_model(model).load_state_dict(checkpoint["model"])
+    optimizer.load_state_dict(checkpoint["optimizer"])
+    scaler.load_state_dict(checkpoint["scaler"])
+    epoch = int(checkpoint.get("epoch", 0))
+    step = int(checkpoint.get("step", 0))
+    best_acc1 = float(checkpoint.get("best_acc1", 0.0))
+    if is_main_process():
+        print(
+            f"resumed checkpoint={checkpoint_path} epoch={epoch} "
+            f"step={step} best_acc1={best_acc1:.2f}",
+            flush=True,
+        )
+    return epoch, step, best_acc1
+
+
 @torch.no_grad()
 def evaluate(
     model: nn.Module,
@@ -226,11 +258,15 @@ def train(config: dict[str, Any]) -> None:
         torch.backends.cuda.matmul.allow_tf32 = True
 
     output_dir = Path(config["run"]["output_dir"])
+    resume_enabled = bool(config["run"].get("resume", False))
+    resume_from = config["run"].get("resume_from")
+    resume_path = Path(resume_from) if resume_from else output_dir / "last.pt"
+    resume_existing = resume_enabled and resume_path.exists()
     if is_main_process():
         output_dir.mkdir(parents=True, exist_ok=True)
         save_json(output_dir / "config.resolved.json", config)
         metrics_path = output_dir / "metrics.jsonl"
-        if metrics_path.exists():
+        if metrics_path.exists() and not resume_existing:
             metrics_path.unlink()
     barrier()
 
@@ -278,10 +314,16 @@ def train(config: dict[str, Any]) -> None:
         params = 0
     wandb_run = init_wandb(config, output_dir, params, state.world_size)
 
-    global_step = 0
-    best_acc1 = 0.0
+    start_epoch, global_step, best_acc1 = load_checkpoint_if_available(
+        config,
+        output_dir,
+        model,
+        optimizer,
+        scaler,
+        state,
+    )
     model.train()
-    for epoch in range(epochs):
+    for epoch in range(start_epoch, epochs):
         if train_bundle.sampler is not None:
             train_bundle.sampler.set_epoch(epoch)
         optimizer.zero_grad(set_to_none=True)

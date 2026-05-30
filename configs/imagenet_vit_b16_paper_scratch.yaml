@@ -6,6 +6,7 @@ run:
   log_every: 100
   eval_every_epochs: 1
   save_every: 1000
+  resume: true
   precision: bf16
   compile: false
 
