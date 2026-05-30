@@ -1,6 +1,6 @@
 run:
   seed: 7
-  output_dir: checkpoints/smoke_dit
+  output_dir: ${WORK}/bb/checkpoints/smoke_dit
   max_steps: 2
   log_every: 1
   save_every: 2
@@ -10,7 +10,7 @@ run:
 
 data:
   dataset: cifar10
-  root: data
+  root: ${WORK}/bb/data
   download: false
   synthetic: true
   synthetic_train_samples: 16

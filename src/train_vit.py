@@ -82,6 +82,49 @@ def build_optimizer(config: dict[str, Any], model: nn.Module) -> torch.optim.Opt
     raise ValueError(f"Unknown optimizer: {name}")
 
 
+def init_wandb(
+    config: dict[str, Any],
+    output_dir: Path,
+    params: int,
+    world_size: int,
+) -> Any | None:
+    wandb_cfg = config.get("logging", {}).get("wandb", {})
+    if not bool(wandb_cfg.get("enabled", False)) or not is_main_process():
+        return None
+    try:
+        import wandb
+    except ImportError as exc:
+        raise RuntimeError("W&B logging is enabled, but wandb is not installed.") from exc
+
+    run_config = {
+        **config,
+        "derived": {
+            "parameters": params,
+            "world_size": world_size,
+            "effective_batch_size": int(config["data"]["batch_size"])
+            * world_size
+            * int(config["optim"].get("grad_accum_steps", 1)),
+        },
+    }
+    wandb_dir = output_dir / "wandb"
+    wandb_dir.mkdir(parents=True, exist_ok=True)
+    return wandb.init(
+        project=str(wandb_cfg.get("project", "bb-imagenet-vit")),
+        entity=wandb_cfg.get("entity"),
+        name=wandb_cfg.get("name"),
+        group=wandb_cfg.get("group"),
+        mode=str(wandb_cfg.get("mode", "online")),
+        dir=str(wandb_dir),
+        config=run_config,
+        resume=str(wandb_cfg.get("resume", "allow")),
+    )
+
+
+def wandb_log(run: Any | None, payload: dict[str, Any], step: int) -> None:
+    if run is not None:
+        run.log(payload, step=step)
+
+
 def save_checkpoint(
     path: Path,
     model: nn.Module,
@@ -208,6 +251,9 @@ def train(config: dict[str, Any]) -> None:
     if is_main_process():
         params = count_parameters(raw_model(model))
         print(f"ViT params={params / 1e6:.2f}M device={state.device} world_size={state.world_size}")
+    else:
+        params = 0
+    wandb_run = init_wandb(config, output_dir, params, state.world_size)
 
     global_step = 0
     best_acc1 = 0.0
@@ -281,6 +327,15 @@ def train(config: dict[str, Any]) -> None:
                             "lr": lr,
                         },
                     )
+                    wandb_log(
+                        wandb_run,
+                        {
+                            "train/loss": mean_loss,
+                            "train/lr": lr,
+                            "epoch": epoch + 1,
+                        },
+                        global_step,
+                    )
             if is_main_process() and int(config["run"].get("save_every", 0)) > 0:
                 save_every = int(config["run"]["save_every"])
                 if global_step % save_every == 0:
@@ -328,6 +383,17 @@ def train(config: dict[str, Any]) -> None:
                         "best_acc1": max(best_acc1, metrics["acc1"]),
                     },
                 )
+                wandb_log(
+                    wandb_run,
+                    {
+                        "val/loss": metrics["loss"],
+                        "val/acc1": metrics["acc1"],
+                        "val/acc5": metrics["acc5"],
+                        "val/best_acc1": max(best_acc1, metrics["acc1"]),
+                        "epoch": epoch + 1,
+                    },
+                    global_step,
+                )
                 if metrics["acc1"] >= best_acc1:
                     best_acc1 = metrics["acc1"]
                     save_checkpoint(
@@ -354,6 +420,8 @@ def train(config: dict[str, Any]) -> None:
             break
 
     barrier()
+    if wandb_run is not None:
+        wandb_run.finish()
     cleanup_distributed()
 
 

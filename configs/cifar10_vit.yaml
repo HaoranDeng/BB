@@ -1,6 +1,6 @@
 run:
   seed: 1337
-  output_dir: checkpoints/cifar10_vit
+  output_dir: ${WORK}/bb/checkpoints/cifar10_vit
   epochs: 200
   max_steps: 1000000000
   log_every: 100
@@ -10,7 +10,7 @@ run:
 
 data:
   dataset: cifar10
-  root: data
+  root: ${WORK}/bb/data
   download: true
   synthetic: false
   augment: true

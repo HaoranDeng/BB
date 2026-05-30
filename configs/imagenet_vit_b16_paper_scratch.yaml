@@ -1,6 +1,6 @@
 run:
   seed: 1337
-  output_dir: checkpoints/imagenet_vit_b16_paper_scratch
+  output_dir: ${WORK}/bb/checkpoints/imagenet_vit_b16_paper_scratch
   epochs: 300
   max_steps: 1000000000
   log_every: 100
@@ -11,7 +11,7 @@ run:
 
 data:
   dataset: imagenet
-  root: /path/to/imagenet
+  root: ${WORK}/bb/data/imagenet
   train_dir: null
   val_dir: null
   download: false
@@ -47,3 +47,13 @@ optim:
   grad_accum_steps: 16
   grad_clip: 1.0
   label_smoothing: 0.0
+
+logging:
+  wandb:
+    enabled: true
+    project: bb-imagenet-vit
+    entity: null
+    name: imagenet-vit-b16-paper-scratch-mi2104x
+    group: imagenet-vit-b16
+    mode: online
+    resume: allow

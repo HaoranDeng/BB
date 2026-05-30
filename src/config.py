@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -7,12 +8,22 @@ from typing import Any
 import yaml
 
 
+def expand_env_vars(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: expand_env_vars(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [expand_env_vars(item) for item in value]
+    if isinstance(value, str):
+        return os.path.expanduser(os.path.expandvars(value))
+    return value
+
+
 def load_config(path: str | Path) -> dict[str, Any]:
     with Path(path).open("r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
     if not isinstance(config, dict):
         raise ValueError(f"Config must be a mapping: {path}")
-    return config
+    return expand_env_vars(config)
 
 
 def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:
@@ -52,7 +63,7 @@ def apply_dotlist_overrides(config: dict[str, Any], overrides: list[str]) -> dic
             if not isinstance(cursor, dict):
                 raise ValueError(f"Cannot set nested override through non-mapping: {key_path}")
         cursor[parts[-1]] = parse_override(raw_value)
-    return out
+    return expand_env_vars(out)
 
 
 def require(config: dict[str, Any], dotted_key: str) -> Any:

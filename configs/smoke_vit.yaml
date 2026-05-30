@@ -1,6 +1,6 @@
 run:
   seed: 7
-  output_dir: checkpoints/smoke_vit
+  output_dir: ${WORK}/bb/checkpoints/smoke_vit
   epochs: 1
   max_steps: 2
   log_every: 1
@@ -10,7 +10,7 @@ run:
 
 data:
   dataset: cifar10
-  root: data
+  root: ${WORK}/bb/data
   download: false
   synthetic: true
   synthetic_train_samples: 16

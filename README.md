@@ -8,6 +8,9 @@ BB is a compact PyTorch repo for transformer vision experiments:
 
 The repo is intentionally small: YAML configs, reusable CIFAR dataloaders, one ViT,
 one DiT, DDPM training, DDIM sampling, EMA checkpoints, and CPU-friendly smoke tests.
+Large files are expected to live under `$WORK`: datasets under `$WORK/bb/data`,
+and checkpoints, samples, and W&B files under `$WORK/bb/checkpoints`.
+Config files support environment variables such as `${WORK}`.
 
 ## Layout
 
@@ -139,15 +142,15 @@ and `grad_accum_steps: 16` gives an effective global batch size of 4096.
 ```bash
 torchrun --standalone --nproc_per_node=4 tools/train_vit.py \
   --config configs/imagenet_vit_b16_paper_scratch.yaml \
-  --override data.root=/path/to/imagenet \
-  --override run.output_dir=checkpoints/imagenet_vit_b16
+  --override data.root="${WORK}/bb/data/imagenet" \
+  --override run.output_dir="${WORK}/bb/checkpoints/imagenet_vit_b16"
 ```
 
 The headline report should come from the best validation record in
-`checkpoints/imagenet_vit_b16/metrics.jsonl`, using `acc1` and `acc5`.
+`$WORK/bb/checkpoints/imagenet_vit_b16/metrics.jsonl`, using `acc1` and `acc5`.
 
 ```bash
-python tools/report_vit_metrics.py checkpoints/imagenet_vit_b16/metrics.jsonl
+python tools/report_vit_metrics.py "$WORK/bb/checkpoints/imagenet_vit_b16/metrics.jsonl"
 ```
 
 ## Train DiT Image Generation
@@ -172,8 +175,8 @@ model weights, EMA weights, optimizer state, scaler state, and diffusion buffers
 ```bash
 python tools/sample_dit.py \
   --config configs/cifar10_dit.yaml \
-  --checkpoint checkpoints/cifar10_dit/last.pt \
-  --output samples/cifar10_dit.png \
+  --checkpoint "$WORK/bb/checkpoints/cifar10_dit/last.pt" \
+  --output "$WORK/bb/checkpoints/samples/cifar10_dit.png" \
   --num-samples 64 \
   --ddim-steps 50 \
   --cfg-scale 1.5
@@ -184,7 +187,7 @@ To sample specific classes:
 ```bash
 python tools/sample_dit.py \
   --config configs/cifar10_dit.yaml \
-  --checkpoint checkpoints/cifar10_dit/last.pt \
+  --checkpoint "$WORK/bb/checkpoints/cifar10_dit/last.pt" \
   --labels 0,1,2,3,4,5,6,7,8,9
 ```
 
